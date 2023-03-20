@@ -1,91 +1,103 @@
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import styles from './page.module.css'
+'use client';
 
-const inter = Inter({ subsets: ['latin'] })
+import { useCallback, useState } from 'react'
+
+import clsx from 'clsx'
+import {
+  Model,
+  ListModelsResponse,
+  CreateChatCompletionResponse,
+  CreateChatCompletionRequest,
+  ChatCompletionRequestMessage,
+} from 'openai';
+
+import { OPENAI_HOST, OPENAI_API_KEY } from '@/constants';
+import { get, post } from '@/utils/fetch';
 
 export default function Home() {
+  const [ models, setModels ] = useState<Model[]>([])
+  const [ messages, setMessages ] = useState<ChatCompletionRequestMessage[]>([])
+  const [ selectedModel, setSelectedModel ] = useState<Model>()
+  const [ text, setText ] = useState('')
+
+  const getModels = useCallback(async () => {
+    const result = await get<ListModelsResponse>(`${OPENAI_HOST}/models`, OPENAI_API_KEY, {})
+    if ('error' in result) {
+      alert(result.error)
+      return
+    }
+    setModels(result.data)
+  }, [])
+
+  const addMessage = useCallback(async () => {
+    const newMessage: ChatCompletionRequestMessage = { role: 'user', content: text}
+    setMessages((cur) => ([...cur, newMessage ]))
+    const options: Partial<CreateChatCompletionRequest> = {
+      model: selectedModel?.id || 'gpt-3.5-turbo',
+      messages: [ ...messages, newMessage]
+    }
+
+    const result = await post<CreateChatCompletionResponse>(
+      `${OPENAI_HOST}/chat/completions`,
+      OPENAI_API_KEY,
+      options,
+    )
+    if ('error' in result) {
+      alert(JSON.stringify(result.error, undefined, 2))
+      return
+    }
+    setText('')
+    setMessages((cur) => (!cur || !result.choices[0].message ? cur : [...cur, result.choices[0].message]))
+  }, [messages, selectedModel, text])
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
+    <main className="mx-6 my-4">
+        <p className="row text-3xl font-bold underline">
+          CHAT GPT TEST
         </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+        <div className="md:flex">
+          <div className="flex-1">
+            <button type="button" onClick={getModels}>
+              GET MODELS
+            </button>
+            <ul>
+              {
+                models.map((model) => (
+                  <li key={model.id}>
+                    <button type="button" onClick={() => setSelectedModel(model)} className={clsx('', model.id === selectedModel?.id ? 'bg-red-400' : 'bg-red-50')}>
+                      <p className="text-sm">{model.id}</p>
+                    </button>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+          <div className="flex-1">
+            <ol>
+              {
+                messages.map((message, i) => (
+                  <li key={`message-${i}`} className="mb-4">
+                    <p className="text-sm whitespace-pre-wrap">{message.role}: {message.content}</p>
+                  </li>
+                ))
+              }
+            </ol>
+            <form>
+              <input
+                type="text"
+                value={text}
+                className="border-black border mr-4"
+                onChange={(e) => {
+                  e.preventDefault()
+                  setText(e.target.value)
+                }}
+              />
+              <button type="button" onClick={addMessage}>
+                <p>送信</p>
+              </button>
+            </form>
+          </div>
         </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-        <div className={styles.thirteen}>
-          <Image src="/thirteen.svg" alt="13" width={40} height={31} priority />
-        </div>
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://beta.nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
     </main>
   )
 }
