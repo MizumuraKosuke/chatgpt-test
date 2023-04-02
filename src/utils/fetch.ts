@@ -19,28 +19,16 @@ export const fetchWithErrorHandling = async <T>(
     headers.Authorization = `Bearer ${token}`
   }
 
-  const message = `Trying to ${options.method || 'GET'} from ${url}`
-  console.log(message)
+  console.log(`${options.method || 'GET'} ${url}`)
 
   const response = await axios({
     url,
     headers,
-    // timeout: 10000,
-    validateStatus: (status: number) => status >= 200 && status < 400,
     ...options,
   })
     .catch((e) => {
       console.error('Error with ', e)
-      if ('response' in e && e.response.status === 500) {
-        return { error: 'エラーが発生しました。しばらく置いてから再度お試しください。' }
-      }
-      if ('response' in e && e.response.data instanceof Object && 'error' in e.response.data) {
-        return { error: e.response.data.error as string }
-      }
-      if (e instanceof Error) {
-        return { error: e.message }
-      }
-      return { error: '不明なエラーが発生しました。' }
+      return { error: 'エラーが発生しました。' }
     })
 
   if ('error' in response) {

@@ -1,18 +1,19 @@
-'use client';
+'use client'
 
 import { useCallback, useState } from 'react'
 
 import clsx from 'clsx'
+import Link from 'next/link'
 import {
   Model,
   ListModelsResponse,
   CreateChatCompletionResponse,
   CreateChatCompletionRequest,
   ChatCompletionRequestMessage,
-} from 'openai';
+} from 'openai'
 
-import { OPENAI_HOST, OPENAI_API_KEY } from '@/constants';
-import { get, post } from '@/utils/fetch';
+import { OPENAI_HOST, OPENAI_API_KEY } from '@/constants'
+import { get, post } from '@/utils/fetch'
 
 export default function Home() {
   const [ models, setModels ] = useState<Model[]>([])
@@ -52,9 +53,15 @@ export default function Home() {
 
   return (
     <main className="mx-6 my-4">
-        <p className="row text-3xl font-bold underline">
+      <Link href="/image">
+        <p className="text-lg underline">
+          画像生成
+        </p>
+      </Link>
+        <p className="row text-3xl font-bold">
           CHAT GPT TEST
         </p>
+
         <div className="md:flex">
           <div className="flex-1">
             <button type="button" onClick={getModels}>
