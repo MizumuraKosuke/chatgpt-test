@@ -34,7 +34,7 @@ const ImagePage = () => {
   return (
     <div className="pt-20 flex flex-col h-screen">
       <form className="flex flex-col items-center pb-8 px-10" onSubmit={onSubmit}>
-        <label className="mb-2 text-4xl font-bold">CHAT-GPT 画像生成</label>
+        <label className="mb-2 text-2xl font-bold">DALL・E 画像生成</label>
         <input
           type="text"
           value={prompt}
